@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EdgeMind · Summer 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #07090a; --surf: #090d09; --surf2: #0a110a;
+    --bdr: #111a11; --bdr2: #0d1a0d;
+    --green: #4ade80; --green-dark: #1a3a1a; --green-dim: #2a5a2a;
+    --amber: #f59e0b; --amber-dim: #3a2a0a;
+    --text: #d4f0d4; --mid: #5a7a5a; --dim: #3a5a3a; --faint: #1e2e1e;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Courier New', Consolas, monospace; min-height: 100vh; }
+  .inner { max-width: 820px; margin: 0 auto; padding: 36px 20px 64px; }
+
+  /* Header */
+  .tag { display: inline-block; font-size: 10px; letter-spacing: .18em; color: var(--green); border: 1px solid var(--green-dark); padding: 3px 10px; border-radius: 2px; margin-bottom: 14px; }
+  h1 { font-size: 40px; font-weight: 700; font-family: Georgia, serif; color: #f0fff0; margin: 0 0 4px; letter-spacing: -.02em; }
+  .subtitle { font-size: 12px; color: var(--dim); margin: 0 0 4px; }
+  .subline { font-size: 11px; color: var(--green-dim); margin: 0 0 24px; }
+  .divider { border: none; border-top: 1px solid var(--bdr); margin: 28px 0; }
+
+  /* Progress */
+  .prog-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .prog-label { font-size: 10px; color: var(--dim); letter-spacing: .1em; }
+  .prog-num { font-size: 10px; color: var(--green); }
+  .prog-track { height: 3px; background: #111a11; border-radius: 2px; overflow: hidden; margin-bottom: 28px; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--green), #22c55e); border-radius: 2px; transition: width .5s ease; }
+  .prog-fill.amber { background: linear-gradient(90deg, var(--amber), #d97706); }
+
+  /* Thesis */
+  .thesis { background: #080e08; border: 1px solid var(--green-dark); border-radius: 3px; padding: 14px 16px; margin-bottom: 28px; }
+  .thesis-label { font-size: 9px; letter-spacing: .16em; color: var(--dim); margin-bottom: 7px; }
+  .thesis p { font-size: 13px; color: #c8e8c8; line-height: 1.7; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--bdr); margin-bottom: 26px; }
+  .tab-btn { font-size: 10px; letter-spacing: .1em; padding: 8px 16px; cursor: pointer; color: var(--dim); background: none; border: none; border-bottom: 2px solid transparent; font-family: inherit; transition: color .15s, border-color .15s; }
+  .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Phase cards */
+  .phase-card { border: 1px solid var(--bdr); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+  .phase-head { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; background: var(--surf); user-select: none; }
+  .phase-num { font-size: 10px; color: var(--faint); min-width: 20px; }
+  .phase-name { flex: 1; font-size: 14px; color: var(--text); font-family: Georgia, serif; }
+  .phase-weeks { font-size: 10px; color: var(--faint); }
+  .phase-count { font-size: 10px; color: var(--faint); margin-left: 8px; }
+  .phase-arrow { font-size: 9px; color: var(--faint); margin-left: 6px; }
+  .phase-body { display: none; padding: 14px 16px 18px; border-top: 1px solid var(--bdr2); background: var(--surf2); }
+  .phase-body.open { display: block; }
+  .phase-prog { margin-bottom: 16px; }
+
+  /* Tasks */
+  .task { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 9px; cursor: pointer; }
+  .checkbox { width: 13px; height: 13px; border: 1px solid var(--green-dark); border-radius: 2px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: all .12s; }
+  .checkbox.done { background: var(--green); border-color: var(--green); }
+  .checkbox.done.amber-cb { background: var(--amber); border-color: var(--amber); }
+  .checkbox span { color: #07090a; font-size: 8px; font-weight: 700; display: none; }
+  .checkbox.done span { display: block; }
+  .task-text { font-size: 12px; color: var(--mid); line-height: 1.55; transition: color .12s; }
+  .task-text.done { color: var(--faint); text-decoration: line-through; }
+
+  /* Deliverable */
+  .deliverable { margin-top: 16px; padding: 10px 12px; background: #080e08; border: 1px solid var(--bdr); border-radius: 3px; }
+  .deliverable-label { font-size: 9px; letter-spacing: .14em; color: var(--dim); margin-bottom: 3px; }
+  .deliverable p { font-size: 11px; color: var(--green); line-height: 1.5; }
+  .deliverable p.amber { color: var(--amber); }
+
+  /* Daily */
+  .daily-card { border: 1px solid var(--bdr); border-radius: 3px; padding: 14px 16px; margin-top: 4px; }
+  .section-label { font-size: 10px; letter-spacing: .14em; color: var(--dim); margin-bottom: 12px; }
+  .dot-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .dot-row:last-child { margin-bottom: 0; }
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .dot.amber { background: var(--amber); }
+  .dot-text { font-size: 11px; color: var(--mid); line-height: 1.55; }
+
+  /* Architecture */
+  .arch-row { border-radius: 3px; padding: 12px 14px; margin-bottom: 8px; }
+  .arch-row.green { border: 1px solid var(--green-dark); }
+  .arch-row.amber { border: 1px solid var(--amber-dim); }
+  .arch-layer { font-size: 9px; letter-spacing: .12em; margin-bottom: 3px; }
+  .arch-layer.green { color: var(--green); }
+  .arch-layer.amber { color: var(--amber); }
+  .arch-desc { font-size: 14px; color: var(--text); font-family: Georgia, serif; margin-bottom: 4px; }
+  .arch-detail { font-size: 11px; color: var(--mid); line-height: 1.5; }
+  .stack-card { border: 1px solid var(--bdr); border-radius: 3px; padding: 6px 16px 12px; margin-top: 20px; }
+  .stack-row { display: flex; gap: 14px; padding: 8px 0; border-bottom: 1px solid var(--bdr2); align-items: baseline; }
+  .stack-row:last-child { border-bottom: none; }
+  .stack-layer { font-size: 9px; letter-spacing: .1em; color: var(--dim); min-width: 130px; }
+  .stack-tools { font-size: 11px; color: var(--mid); }
+
+  /* Benchmarks */
+  .bench-intro { font-size: 11px; color: var(--mid); margin-bottom: 20px; line-height: 1.7; }
+  .bench-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .bench-card { background: var(--surf); border: 1px solid var(--bdr); border-radius: 3px; padding: 12px 14px; }
+  .bench-val { font-size: 20px; color: var(--green); font-family: Georgia, serif; font-weight: 700; margin-bottom: 2px; }
+  .bench-label { font-size: 10px; color: var(--dim); margin-bottom: 1px; }
+  .bench-desc { font-size: 9px; color: var(--faint); letter-spacing: .05em; }
+  .key-result { border: 1px solid var(--bdr); border-radius: 3px; padding: 14px 16px; }
+  .key-result p { font-size: 12px; color: var(--mid); line-height: 1.7; }
+  .key-result .highlight { color: var(--green); }
+
+  /* Mentor */
+  .mentor-card { background: #080e08; border: 1px solid var(--green-dark); border-radius: 3px; padding: 14px 16px; margin-bottom: 20px; }
+  .mentor-title { font-size: 14px; color: var(--text); font-family: Georgia, serif; margin-bottom: 4px; }
+  .mentor-detail { font-size: 11px; color: var(--mid); line-height: 1.6; }
+  .mentor-q { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+  .mentor-n { font-size: 10px; color: var(--green-dim); min-width: 18px; margin-top: 1px; }
+  .mentor-text { font-size: 12px; color: var(--mid); line-height: 1.55; }
+  .tips-card { border: 1px solid var(--bdr); border-radius: 3px; padding: 14px 16px; margin-top: 20px; }
+
+  /* Footer */
+  .footer { margin-top: 48px; border-top: 1px solid var(--bdr2); padding-top: 18px; display: flex; justify-content: space-between; }
+  .footer span { font-size: 9px; color: var(--faint); letter-spacing: .1em; }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 28px; }
+    .bench-grid { grid-template-columns: 1fr 1fr; }
+    .tab-btn { padding: 8px 10px; font-size: 9px; }
+    .phase-weeks { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="inner">
+
+  <!-- Header -->
+  <div class="tag">EDGEMIND · HARDWARE/SOFTWARE CO-DESIGN · SUMMER 2026</div>
+  <h1>EdgeMind</h1>
+  <p class="subtitle">Autonomous AI runtime for constrained systems · Ali Hassan · KCL MEng</p>
+  <p class="subline">Custom RISC-V core on FPGA → quantised inference → autonomous application</p>
+
+  <div class="prog-row">
+    <span class="prog-label">OVERALL PROGRESS</span>
+    <span class="prog-num" id="overall-label">0/0 · 0%</span>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="overall-bar" style="width:0%"></div></div>
+
+  <!-- Thesis -->
+  <div class="thesis">
+    <div class="thesis-label">THE THESIS</div>
+    <p>Most students run inference on hardware someone else built. EdgeMind is different: the compute substrate is a custom RISC-V processor designed in SystemVerilog and synthesised on FPGA. Inference runs on silicon you built. The custom matmul ISA extension is the benchmark result nobody else can produce.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('plan')">BUILD PLAN</button>
+    <button class="tab-btn" onclick="switchTab('arch')">ARCHITECTURE</button>
+    <button class="tab-btn" onclick="switchTab('benchmarks')">BENCHMARKS</button>
+    <button class="tab-btn" onclick="switchTab('mentor')">MENTOR PREP</button>
+  </div>
+
+  <!-- BUILD PLAN -->
+  <div class="tab-content active" id="tab-plan">
+    <div id="phases-container"></div>
+    <div class="daily-card">
+      <div class="section-label">DAILY — NON-NEGOTIABLE</div>
+      <div class="dot-row"><div class="dot"></div><span class="dot-text">45 min LeetCode — no exceptions</span></div>
+      <div class="dot-row"><div class="dot"></div><span class="dot-text">At least one public commit to EdgeMind</span></div>
+      <div class="dot-row"><div class="dot"></div><span class="dot-text">Read 1 ML systems paper, blog post, or hardware whitepaper</span></div>
+      <div class="dot-row"><div class="dot"></div><span class="dot-text">Log one concrete learning in notes</span></div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="tab-content" id="tab-arch">
+    <p style="font-size:11px;color:var(--mid);margin-bottom:20px;line-height:1.7;">Four layers stacked bottom-up. The innovation lives in layers 00 and 01. Layers 02 and 03 make it legible to the outside world.</p>
+    <div class="arch-row green">
+      <div class="arch-layer green">LAYER 03 — APPLICATION</div>
+      <div class="arch-desc">UAV / satellite demo. The visible surface.</div>
+      <div class="arch-detail">Drone obstacle avoidance or satellite image triage running end-to-end on hardware you built.</div>
+    </div>
+    <div class="arch-row amber">
+      <div class="arch-layer amber">LAYER 02 — RUNTIME</div>
+      <div class="arch-desc">Agent loop: perceive → reason → act.</div>
+      <div class="arch-detail">Local/cloud switching. Task prioritisation under power and bandwidth constraints.</div>
+    </div>
+    <div class="arch-row green">
+      <div class="arch-layer green">LAYER 01 — INFERENCE CORE</div>
+      <div class="arch-desc">Quantised INT8 model. Custom GEMM acceleration.</div>
+      <div class="arch-detail">The moat. Quantised model compiled via RISC-V GCC, running on silicon you designed.</div>
+    </div>
+    <div class="arch-row green" style="border-color:#4ade80;opacity:.9">
+      <div class="arch-layer green">LAYER 00 — COMPUTE SUBSTRATE</div>
+      <div class="arch-desc">Custom RISC-V processor on FPGA.</div>
+      <div class="arch-detail">RV32IM + custom matmul ISA extension in SystemVerilog. Nobody else at student level has this.</div>
+    </div>
+    <div class="stack-card">
+      <div class="section-label" style="margin-top:12px;">TECH STACK</div>
+      <div class="stack-row"><span class="stack-layer">HARDWARE DESIGN</span><span class="stack-tools">SystemVerilog · Vivado / Yosys + nextpnr</span></div>
+      <div class="stack-row"><span class="stack-layer">PROCESSOR ARCH</span><span class="stack-tools">RISC-V RV32IM · custom matmul ISA extension</span></div>
+      <div class="stack-row"><span class="stack-layer">FPGA</span><span class="stack-tools">Digilent Arty A7 or iCE40 (confirm with mentor)</span></div>
+      <div class="stack-row"><span class="stack-layer">TOOLCHAIN</span><span class="stack-tools">RISC-V GCC · objdump · spike simulator</span></div>
+      <div class="stack-row"><span class="stack-layer">ML OPTIMISATION</span><span class="stack-tools">TF Lite Micro · PyTorch · CMSIS-NN · QAT</span></div>
+      <div class="stack-row"><span class="stack-layer">VERIFICATION</span><span class="stack-tools">SystemVerilog testbench · GTKWave waveforms</span></div>
+      <div class="stack-row"><span class="stack-layer">APPLICATION</span><span class="stack-tools">Drone sim · satellite sim · C/C++ runtime</span></div>
+    </div>
+  </div>
+
+  <!-- BENCHMARKS -->
+  <div class="tab-content" id="tab-benchmarks">
+    <p class="bench-intro">Every number must be measured, not estimated. The benchmark report published on GitHub is the proof of work.</p>
+    <div class="bench-grid">
+      <div class="bench-card"><div class="bench-val">50MHz+</div><div class="bench-label">Core clock freq</div><div class="bench-desc">on target FPGA</div></div>
+      <div class="bench-card"><div class="bench-val">2–5×</div><div class="bench-label">Custom ISA speedup</div><div class="bench-desc">matmul vs software GEMM</div></div>
+      <div class="bench-card"><div class="bench-val">&lt;100ms</div><div class="bench-label">Inference latency</div><div class="bench-desc">RV32IM, quantised model</div></div>
+      <div class="bench-card"><div class="bench-val">&lt;4MB</div><div class="bench-label">Model footprint</div><div class="bench-desc">quantised + pruned</div></div>
+      <div class="bench-card"><div class="bench-val">&lt;5W</div><div class="bench-label">System power</div><div class="bench-desc">FPGA under inference load</div></div>
+      <div class="bench-card"><div class="bench-val">150+</div><div class="bench-label">LeetCode solved</div><div class="bench-desc">by week 12</div></div>
+    </div>
+    <div class="key-result">
+      <div class="section-label" style="margin-bottom:10px;">THE KEY RESULT</div>
+      <p>The headline number is the <span class="highlight">custom ISA extension speedup</span>: measured latency of GEMM using your custom matmul instruction vs software-emulated matrix multiply on baseline RV32IM. A 2–5× measured speedup is what makes this hardware/software co-design rather than a student exercise. This is the result that impresses Graphcore, Arm, and every AI accelerator company.</p>
+    </div>
+  </div>
+
+  <!-- MENTOR PREP -->
+  <div class="tab-content" id="tab-mentor">
+    <div class="mentor-card">
+      <div class="thesis-label">YOUR MENTOR</div>
+      <div class="mentor-title">Silicon Design Engineer · Graphcore</div>
+      <p class="mentor-detail">Prev: RTL Design Lead at VyperCore (RISC-V). Principal Digital Design & Verification Engineer at Ultraleap. Bristol Electronics Engineering. He builds AI accelerator hardware professionally — the same problem you're tackling at student scale. Don't waste the meeting.</p>
+    </div>
+    <div class="section-label">QUESTIONS TO BRING — PREPARED AND SPECIFIC</div>
+    <div class="mentor-q"><span class="mentor-n">01</span><span class="mentor-text">Which FPGA board do you recommend for a first RISC-V implementation?</span></div>
+    <div class="mentor-q"><span class="mentor-n">02</span><span class="mentor-text">Should I start from PicoRV32 / SERV as a reference, or implement from scratch?</span></div>
+    <div class="mentor-q"><span class="mentor-n">03</span><span class="mentor-text">Is RV32IM sufficient or should I target a vector extension (RVV)?</span></div>
+    <div class="mentor-q"><span class="mentor-n">04</span><span class="mentor-text">What would a candidate with this project look like to you in a Graphcore interview?</span></div>
+    <div class="mentor-q"><span class="mentor-n">05</span><span class="mentor-text">What would you immediately see through — where do students over-claim on hardware projects?</span></div>
+    <div class="mentor-q"><span class="mentor-n">06</span><span class="mentor-text">Should I learn UVM verification this summer or focus on design first?</span></div>
+    <div class="tips-card">
+      <div class="section-label" style="margin-bottom:10px;">HOW TO HANDLE THE MEETING</div>
+      <div class="dot-row"><div class="dot amber"></div><span class="dot-text">Bring a one-page written summary of EdgeMind — show you've done the thinking</span></div>
+      <div class="dot-row"><div class="dot amber"></div><span class="dot-text">Share the GitHub repo link even if it's sparse — shows you're already building</span></div>
+      <div class="dot-row"><div class="dot amber"></div><span class="dot-text">Ask for brutal honesty: what would he see through immediately</span></div>
+      <div class="dot-row"><div class="dot amber"></div><span class="dot-text">End with: "Can I send you an update in 6 weeks when I have something concrete to show?"</span></div>
+      <div class="dot-row"><div class="dot amber"></div><span class="dot-text">Do not ask for a job. Let the work speak. The relationship compounds over time.</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>EDGEMIND · KCL 2026</span>
+    <span id="footer-count">0/0 · 0%</span>
+  </div>
+</div>
+
+<script>
+const PHASES = [
+  {
+    id:"p1", num:"01", name:"Foundation", weeks:"Weeks 1–2", color:"green",
+    tasks:[
+      {id:"p1t1", text:"Identify Raspberry Pi model — use as software dev + inference baseline"},
+      {id:"p1t2", text:"Consult family friend: which FPGA board to buy, which RISC-V starter to use"},
+      {id:"p1t3", text:"Order FPGA board (likely Digilent Arty A7 or iCE40 — confirm with mentor)"},
+      {id:"p1t4", text:"Install Vivado or open-source toolchain (Yosys + nextpnr for iCE40)"},
+      {id:"p1t5", text:"Run TF Lite inference on Pi — log baseline latency and memory as reference"},
+      {id:"p1t6", text:"Complete fast.ai Practical DL Part 1 (chapters 1–4)"},
+      {id:"p1t7", text:"Study RISC-V ISA spec: understand RV32I base integer instruction set"},
+      {id:"p1t8", text:"Create public GitHub repo: EdgeMind — README with architecture thesis"},
+      {id:"p1t9", text:"Start LeetCode daily habit — arrays, hashmaps, two pointers"},
+    ],
+    deliverable:"FPGA board ordered. TF Lite baseline on Pi documented. RISC-V ISA understood. Toolchain installed.",
+  },
+  {
+    id:"p2", num:"02", name:"RISC-V Core", weeks:"Weeks 3–5", color:"green",
+    tasks:[
+      {id:"p2t1", text:"Study existing minimal RISC-V cores: PicoRV32 or SERV as reference"},
+      {id:"p2t2", text:"Implement 5-stage pipeline in SystemVerilog: IF → ID → EX → MEM → WB"},
+      {id:"p2t3", text:"Implement RV32I base instruction set — all 47 base instructions"},
+      {id:"p2t4", text:"Add RV32M extension: multiply and divide (required for inference arithmetic)"},
+      {id:"p2t5", text:"Synthesise core on FPGA — run first test program (fibonacci, bubble sort)"},
+      {id:"p2t6", text:"Set up RISC-V GCC toolchain — compile and run C code on custom core"},
+      {id:"p2t7", text:"Write SystemVerilog testbench — verify pipeline correctness with waveforms"},
+      {id:"p2t8", text:"Benchmark: clock frequency, instructions per cycle, FPGA resource utilisation"},
+      {id:"p2t9", text:"LeetCode: trees, graphs, dynamic programming"},
+    ],
+    deliverable:"Working RV32IM core synthesised on FPGA. C programs compiling and running correctly. Clock freq measured.",
+  },
+  {
+    id:"p3", num:"03", name:"Inference on Custom Silicon", weeks:"Weeks 6–8", color:"green",
+    tasks:[
+      {id:"p3t1", text:"Port a quantised INT8 model to run on RISC-V core via GCC toolchain"},
+      {id:"p3t2", text:"Profile inference: identify which operations dominate (almost certainly GEMM)"},
+      {id:"p3t3", text:"Design custom ISA extension: add a dot-product or matmul instruction in SystemVerilog"},
+      {id:"p3t4", text:"Measure speedup: custom instruction vs software-emulated GEMM on baseline RV32IM"},
+      {id:"p3t5", text:"Compare inference latency: your RISC-V core vs ARM Pi for same quantised model"},
+      {id:"p3t6", text:"Apply quantisation-aware training — measure accuracy retention vs FP32 baseline"},
+      {id:"p3t7", text:"Publish full benchmark report: latency, power, accuracy, resource utilisation"},
+      {id:"p3t8", text:"Write technical blog post: 'Building a RISC-V inference engine from scratch'"},
+      {id:"p3t9", text:"LeetCode: system design, bit manipulation, advanced graphs"},
+    ],
+    deliverable:"Quantised inference running on custom RISC-V core. Measured speedup from custom ISA extension documented.",
+  },
+  {
+    id:"p4", num:"04", name:"Runtime & Application", weeks:"Weeks 9–10", color:"amber",
+    tasks:[
+      {id:"p4t1", text:"Choose application: UAV obstacle avoidance OR satellite image triage"},
+      {id:"p4t2", text:"Build agent loop on RISC-V core: perceive → reason → act"},
+      {id:"p4t3", text:"Implement local/cloud switching: RISC-V handles local inference, offload heavy tasks"},
+      {id:"p4t4", text:"Build simulation environment for chosen application domain"},
+      {id:"p4t5", text:"Measure full-system power draw under inference load"},
+      {id:"p4t6", text:"Record demo video — narrate the full hardware stack, show it running"},
+    ],
+    deliverable:"Autonomous application running on custom RISC-V core. Demo video live.",
+  },
+  {
+    id:"p5", num:"05", name:"Launch & Leverage", weeks:"Weeks 11–12", color:"amber",
+    tasks:[
+      {id:"p5t1", text:"Polish GitHub README: architecture diagrams, benchmark tables, demo GIF, setup guide"},
+      {id:"p5t2", text:"Write definitive blog post: full hardware/software co-design story"},
+      {id:"p5t3", text:"Submit to ESA Space App Challenge, UAV hackathon, or RISC-V competition"},
+      {id:"p5t4", text:"Apply to: Arm, Graphcore, Waymo, Tenstorrent, Orbital Sidekick, L3Harris"},
+      {id:"p5t5", text:"Send mentor update to family friend — share repo and benchmark results"},
+      {id:"p5t6", text:"Post demo video on X + LinkedIn with technical thread on the ISA extension"},
+      {id:"p5t7", text:"Cold outreach to 3 engineers in edge AI or processor architecture"},
+      {id:"p5t8", text:"Draft YC one-pager if startup thesis feels compelling post-build"},
+    ],
+    deliverable:"Public repo + blog post live. Applications sent. Graphcore and Arm on radar.",
+  },
+];
+
+const STORAGE_KEY = "edgemind-v3";
+let checked = {};
+let expanded = { p1: true, p2: false, p3: false, p4: false, p5: false };
+
+function load() {
+  try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : {}; } catch { return {}; }
+}
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(checked)); } catch {}
+}
+
+function updateProgress() {
+  const all = PHASES.flatMap(p => p.tasks);
+  const total = all.length;
+  const done = all.filter(t => checked[t.id]).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById("overall-bar").style.width = pct + "%";
+  document.getElementById("overall-label").textContent = `${done}/${total} · ${pct}%`;
+  document.getElementById("footer-count").textContent = `${done}/${total} · ${pct}%`;
+
+  PHASES.forEach(phase => {
+    const pDone = phase.tasks.filter(t => checked[t.id]).length;
+    const pPct = Math.round(pDone / phase.tasks.length * 100);
+    const bar = document.getElementById(`bar-${phase.id}`);
+    const count = document.getElementById(`count-${phase.id}`);
+    if (bar) { bar.style.width = pPct + "%"; }
+    if (count) {
+      count.textContent = `${pDone}/${phase.tasks.length}`;
+      count.style.color = pDone === phase.tasks.length ? (phase.color === "amber" ? "var(--amber)" : "var(--green)") : "var(--faint)";
+    }
+  });
+}
+
+function toggleTask(taskId) {
+  checked[taskId] = !checked[taskId];
+  save();
+  const cb = document.getElementById(`cb-${taskId}`);
+  const txt = document.getElementById(`txt-${taskId}`);
+  if (cb) {
+    cb.classList.toggle("done", !!checked[taskId]);
+    if (cb.classList.contains("amber-cb")) cb.classList.toggle("amber-cb", cb.classList.contains("done"));
+  }
+  if (txt) txt.classList.toggle("done", !!checked[taskId]);
+  updateProgress();
+}
+
+function togglePhase(phaseId) {
+  expanded[phaseId] = !expanded[phaseId];
+  const body = document.getElementById(`body-${phaseId}`);
+  const arrow = document.getElementById(`arrow-${phaseId}`);
+  if (body) body.classList.toggle("open", expanded[phaseId]);
+  if (arrow) arrow.textContent = expanded[phaseId] ? "▲" : "▼";
+}
+
+function buildPhases() {
+  const container = document.getElementById("phases-container");
+  PHASES.forEach(phase => {
+    const isAmber = phase.color === "amber";
+    const card = document.createElement("div");
+    card.className = "phase-card";
+    card.innerHTML = `
+      <div class="phase-head" onclick="togglePhase('${phase.id}')">
+        <span class="phase-num">${phase.num}</span>
+        <span class="phase-name">${phase.name}</span>
+        <span class="phase-weeks">${phase.weeks}</span>
+        <span class="phase-count" id="count-${phase.id}">0/${phase.tasks.length}</span>
+        <span class="phase-arrow" id="arrow-${phase.id}">${expanded[phase.id] ? "▲" : "▼"}</span>
+      </div>
+      <div class="phase-body${expanded[phase.id] ? " open" : ""}" id="body-${phase.id}">
+        <div class="phase-prog prog-track">
+          <div class="${isAmber ? "prog-fill amber" : "prog-fill"}" id="bar-${phase.id}" style="width:0%"></div>
+        </div>
+        ${phase.tasks.map(task => `
+          <div class="task" onclick="toggleTask('${task.id}')">
+            <div class="checkbox${checked[task.id] ? " done" + (isAmber ? " amber-cb" : "") : ""}" id="cb-${task.id}">
+              <span>✓</span>
+            </div>
+            <span class="task-text${checked[task.id] ? " done" : ""}" id="txt-${task.id}">${task.text}</span>
+          </div>
+        `).join("")}
+        <div class="deliverable">
+          <div class="deliverable-label">PHASE DELIVERABLE</div>
+          <p class="${isAmber ? "amber" : ""}">${phase.deliverable}</p>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function switchTab(id) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+  document.getElementById("tab-" + id).classList.add("active");
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    if (btn.getAttribute("onclick") === `switchTab('${id}')`) btn.classList.add("active");
+  });
+}
+
+// Init
+checked = load();
+buildPhases();
+updateProgress();
+</script>
+</body>
+</html>
