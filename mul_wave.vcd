@@ -1,0 +1,413 @@
+$date
+	Mon May 25 18:29:45 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module test_mul $end
+$var wire 1 ! result_vld $end
+$var wire 32 " result [31:0] $end
+$var reg 1 # clk $end
+$var reg 32 $ op_a [31:0] $end
+$var reg 32 % op_b [31:0] $end
+$var reg 1 & op_vld $end
+$var reg 1 ' rst_n $end
+$scope module dut $end
+$var wire 1 # clk $end
+$var wire 3 ( op [2:0] $end
+$var wire 32 ) op_a [31:0] $end
+$var wire 32 * op_b [31:0] $end
+$var wire 1 & op_vld $end
+$var wire 1 ' rst_n $end
+$var wire 32 + result [31:0] $end
+$var parameter 6 , ALUOP_ADD $end
+$var parameter 6 - ALUOP_AND $end
+$var parameter 6 . ALUOP_ANDN $end
+$var parameter 6 / ALUOP_BCLR $end
+$var parameter 6 0 ALUOP_BEXT $end
+$var parameter 6 1 ALUOP_BEXTM $end
+$var parameter 6 2 ALUOP_BINV $end
+$var parameter 6 3 ALUOP_BREV8 $end
+$var parameter 6 4 ALUOP_BSET $end
+$var parameter 6 5 ALUOP_CLMUL $end
+$var parameter 6 6 ALUOP_CLZ $end
+$var parameter 6 7 ALUOP_CPOP $end
+$var parameter 6 8 ALUOP_CTZ $end
+$var parameter 6 9 ALUOP_LT $end
+$var parameter 6 : ALUOP_LTU $end
+$var parameter 6 ; ALUOP_MAX $end
+$var parameter 6 < ALUOP_MAXU $end
+$var parameter 6 = ALUOP_MIN $end
+$var parameter 6 > ALUOP_MINU $end
+$var parameter 6 ? ALUOP_MULDIV $end
+$var parameter 6 @ ALUOP_OR $end
+$var parameter 6 A ALUOP_ORC_B $end
+$var parameter 6 B ALUOP_ORN $end
+$var parameter 6 C ALUOP_PACK $end
+$var parameter 6 D ALUOP_PACKH $end
+$var parameter 6 E ALUOP_REV8 $end
+$var parameter 6 F ALUOP_ROL $end
+$var parameter 6 G ALUOP_ROR $end
+$var parameter 6 H ALUOP_RS2 $end
+$var parameter 6 I ALUOP_SEXT_B $end
+$var parameter 6 J ALUOP_SEXT_H $end
+$var parameter 6 K ALUOP_SHXADD $end
+$var parameter 6 L ALUOP_SLL $end
+$var parameter 6 M ALUOP_SRA $end
+$var parameter 6 N ALUOP_SRL $end
+$var parameter 6 O ALUOP_SUB $end
+$var parameter 6 P ALUOP_UNZIP $end
+$var parameter 6 Q ALUOP_XNOR $end
+$var parameter 6 R ALUOP_XOR $end
+$var parameter 6 S ALUOP_XPERM $end
+$var parameter 6 T ALUOP_ZEXT_H $end
+$var parameter 6 U ALUOP_ZIP $end
+$var parameter 1 V ALUSRCA_PC $end
+$var parameter 1 W ALUSRCA_RS1 $end
+$var parameter 1 X ALUSRCB_IMM $end
+$var parameter 1 Y ALUSRCB_RS2 $end
+$var parameter 2 Z BCOND_ALWAYS $end
+$var parameter 2 [ BCOND_NEVER $end
+$var parameter 2 \ BCOND_NZERO $end
+$var parameter 2 ] BCOND_ZERO $end
+$var parameter 32 ^ BRANCH_PREDICTOR $end
+$var parameter 32 _ BREAKPOINT_TRIGGERS $end
+$var parameter 32 ` CSR_COUNTER $end
+$var parameter 32 a CSR_M_MANDATORY $end
+$var parameter 32 b CSR_M_TRAP $end
+$var parameter 2 c CSR_WTYPE_C $end
+$var parameter 2 d CSR_WTYPE_S $end
+$var parameter 2 e CSR_WTYPE_W $end
+$var parameter 32 f DEBUG_SUPPORT $end
+$var parameter 4 g EXCEPT_EBREAK $end
+$var parameter 4 h EXCEPT_ECALL_M $end
+$var parameter 4 i EXCEPT_ECALL_U $end
+$var parameter 4 j EXCEPT_INSTR_FAULT $end
+$var parameter 4 k EXCEPT_INSTR_ILLEGAL $end
+$var parameter 4 l EXCEPT_INSTR_MISALIGN $end
+$var parameter 4 m EXCEPT_LOAD_ALIGN $end
+$var parameter 4 n EXCEPT_LOAD_FAULT $end
+$var parameter 4 o EXCEPT_MRET $end
+$var parameter 4 p EXCEPT_NONE $end
+$var parameter 4 q EXCEPT_REFETCH $end
+$var parameter 4 r EXCEPT_STORE_ALIGN $end
+$var parameter 4 s EXCEPT_STORE_FAULT $end
+$var parameter 32 t EXTENSION_A $end
+$var parameter 32 u EXTENSION_C $end
+$var parameter 32 v EXTENSION_E $end
+$var parameter 32 w EXTENSION_M $end
+$var parameter 32 x EXTENSION_XH3BEXTM $end
+$var parameter 32 y EXTENSION_XH3IRQ $end
+$var parameter 32 z EXTENSION_XH3PMPM $end
+$var parameter 32 { EXTENSION_XH3POWER $end
+$var parameter 32 | EXTENSION_ZBA $end
+$var parameter 32 } EXTENSION_ZBB $end
+$var parameter 32 ~ EXTENSION_ZBC $end
+$var parameter 32 !" EXTENSION_ZBKB $end
+$var parameter 32 "" EXTENSION_ZBKX $end
+$var parameter 32 #" EXTENSION_ZBS $end
+$var parameter 32 $" EXTENSION_ZCB $end
+$var parameter 32 %" EXTENSION_ZCLSD $end
+$var parameter 32 &" EXTENSION_ZCMP $end
+$var parameter 32 '" EXTENSION_ZIFENCEI $end
+$var parameter 32 (" EXTENSION_ZILSD $end
+$var parameter 32 )" FAST_BRANCHCMP $end
+$var parameter 1 *" IRQ_INPUT_BYPASS $end
+$var parameter 32 +" IRQ_PRIORITY_BITS $end
+$var parameter 32 ," MCONFIGPTR_VAL $end
+$var parameter 5 -" MEMOP_AMO $end
+$var parameter 5 ." MEMOP_LB $end
+$var parameter 5 /" MEMOP_LBU $end
+$var parameter 5 0" MEMOP_LH $end
+$var parameter 5 1" MEMOP_LHU $end
+$var parameter 5 2" MEMOP_LR_W $end
+$var parameter 5 3" MEMOP_LW $end
+$var parameter 5 4" MEMOP_NONE $end
+$var parameter 5 5" MEMOP_SB $end
+$var parameter 5 6" MEMOP_SC_W $end
+$var parameter 5 7" MEMOP_SH $end
+$var parameter 5 8" MEMOP_SW $end
+$var parameter 32 9" MTVEC_INIT $end
+$var parameter 32 :" MTVEC_WMASK $end
+$var parameter 32 ;" MULDIV_UNROLL $end
+$var parameter 32 <" MULH_FAST $end
+$var parameter 32 =" MUL_FAST $end
+$var parameter 32 >" MUL_FASTER $end
+$var parameter 32 ?" MVENDORID_VAL $end
+$var parameter 3 @" M_OP_DIV $end
+$var parameter 3 A" M_OP_DIVU $end
+$var parameter 3 B" M_OP_MUL $end
+$var parameter 3 C" M_OP_MULH $end
+$var parameter 3 D" M_OP_MULHSU $end
+$var parameter 3 E" M_OP_MULHU $end
+$var parameter 3 F" M_OP_REM $end
+$var parameter 3 G" M_OP_REMU $end
+$var parameter 32 H" NUM_IRQS $end
+$var parameter 32 I" PMP_GRAIN $end
+$var parameter 1 J" PMP_HARDWIRED $end
+$var parameter 32 K" PMP_HARDWIRED_ADDR $end
+$var parameter 8 L" PMP_HARDWIRED_CFG $end
+$var parameter 32 M" PMP_MATCH_NAPOT $end
+$var parameter 32 N" PMP_MATCH_TOR $end
+$var parameter 32 O" PMP_REGIONS $end
+$var parameter 32 P" REDUCED_BYPASS $end
+$var parameter 32 Q" RESET_REGFILE $end
+$var parameter 32 R" RESET_VECTOR $end
+$var parameter 32 S" U_MODE $end
+$var parameter 32 T" W_ADDR $end
+$var parameter 32 U" W_ALUOP $end
+$var parameter 32 V" W_ALUSRC $end
+$var parameter 32 W" W_BCOND $end
+$var parameter 32 X" W_DATA $end
+$var parameter 32 Y" W_EXCEPT $end
+$var parameter 32 Z" W_MEMOP $end
+$var parameter 32 [" W_MULOP $end
+$var parameter 32 \" W_REGADDR $end
+$var parameter 32 ]" W_SHAMT $end
+$var parameter 32 ^" XLEN $end
+$var reg 1 ! result_vld $end
+$scope begin mul_only $end
+$var reg 32 _" op_a_r [31:0] $end
+$var reg 32 `" op_b_r [31:0] $end
+$scope begin op_register $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b100000 ^"
+b101 ]"
+b101 \"
+b11 ["
+b101 Z"
+b100 Y"
+b100000 X"
+b10 W"
+b1 V"
+b110 U"
+b100000 T"
+b0 S"
+b0 R"
+b0 Q"
+b0 P"
+b0 O"
+b0 N"
+b1 M"
+b0 L"
+b0 K"
+0J"
+b0 I"
+b1 H"
+b111 G"
+b110 F"
+b11 E"
+b10 D"
+b1 C"
+b0 B"
+b101 A"
+b100 @"
+b0 ?"
+b0 >"
+b0 ="
+b0 <"
+b1 ;"
+b11111111111111111111111111111101 :"
+b0 9"
+b101 8"
+b110 7"
+b1001 6"
+b111 5"
+b10000 4"
+b0 3"
+b1000 2"
+b11 1"
+b1 0"
+b100 /"
+b10 ."
+b1010 -"
+b0 ,"
+b0 +"
+0*"
+b1 )"
+b0 ("
+b0 '"
+b0 &"
+b0 %"
+b0 $"
+b0 #"
+b0 ""
+b0 !"
+b0 ~
+b0 }
+b0 |
+b0 {
+b0 z
+b0 y
+b0 x
+b1 w
+b0 v
+b1 u
+b1 t
+b111 s
+b110 r
+b1110 q
+b1111 p
+b1010 o
+b101 n
+b100 m
+b0 l
+b10 k
+b1 j
+b1000 i
+b1011 h
+b11 g
+b0 f
+b0 e
+b1 d
+b10 c
+b1 b
+b1 a
+b0 `
+b0 _
+b0 ^
+b10 ]
+b11 \
+b0 [
+b1 Z
+0Y
+1X
+0W
+1V
+b111100 U
+b110011 T
+b111111 S
+b1000 R
+b101000 Q
+b111101 P
+b1 O
+b1001 N
+b1010 M
+b1011 L
+b100000 K
+b110010 J
+b110001 I
+b1101 H
+b110000 G
+b101111 F
+b101110 E
+b111010 D
+b111001 C
+b100111 B
+b101101 A
+b111 @
+b1100 ?
+b101100 >
+b101011 =
+b101010 <
+b101001 ;
+b100 :
+b10 9
+b100101 8
+b100100 7
+b100011 6
+b110100 5
+b111000 4
+b111011 3
+b110111 2
+b111110 1
+b110110 0
+b110101 /
+b100110 .
+b110 -
+b0 ,
+$end
+#0
+$dumpvars
+bx `"
+bx _"
+bx +
+b0 *
+b0 )
+b0 (
+0'
+0&
+b0 %
+b0 $
+0#
+bx "
+0!
+$end
+#5000
+1#
+#10000
+0#
+#15000
+1#
+#20000
+0#
+1'
+#25000
+1#
+#30000
+0#
+1&
+b111 %
+b111 *
+b110 $
+b110 )
+#35000
+1!
+b101010 "
+b101010 +
+b111 `"
+b110 _"
+1#
+#40000
+0#
+0&
+#45000
+0!
+1#
+#50000
+0#
+#55000
+1#
+#60000
+0#
+1&
+b11001000 %
+b11001000 *
+b1100100 $
+b1100100 )
+#65000
+1!
+b11001000 `"
+b100111000100000 "
+b100111000100000 +
+b1100100 _"
+1#
+#70000
+0#
+0&
+#75000
+0!
+1#
+#80000
+0#
+#85000
+1#
+#90000
+0#
+#95000
+1#
+#100000
+0#
+#105000
+1#
+#110000
+0#
