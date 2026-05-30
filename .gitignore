@@ -1,0 +1,10 @@
+*.vcd
+test_decode
+test_matmul
+test_mul
+hello_riscv
+hello_riscv_linux
+matmul_riscv
+*.o
+*.elf
+hazard3/
