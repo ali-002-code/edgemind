@@ -44,8 +44,13 @@ static inline uint32_t read_minstret(void) {
     asm volatile ("csrr %0, minstret" : "=r"(c));
     return c;
 }
+// Clear mcountinhibit (0x320) so mcycle and minstret actually count.
+// On reset Hazard3 defaults these inhibit bits to 1 (counters frozen).
+static inline void enable_counters(void) {
+    asm volatile ("csrw 0x320, zero");
+}
 
-// Custom dot4 instruction
+// Custom dot4 instruction: R-type opcode=0x0B, funct3=1, funct7=0
 static inline int32_t dot4(uint32_t a, uint32_t b) {
     int32_t result;
     asm volatile (".insn r 0x0B, 0x1, 0x0, %0, %1, %2"
@@ -55,18 +60,17 @@ static inline int32_t dot4(uint32_t a, uint32_t b) {
 
 #define N 256   // number of INT8 elements (multiple of 4)
 
-// Two test vectors
 int8_t va[N];
 int8_t vb[N];
 
 void init_vectors(void) {
     for (int i = 0; i < N; i++) {
-        va[i] = (int8_t)((i % 7) - 3);    // small signed values
+        va[i] = (int8_t)((i % 7) - 3);
         vb[i] = (int8_t)((i % 5) - 2);
     }
 }
 
-// Software dot product: plain C loop
+// Software dot product: plain C loop, one element per iteration
 int32_t dot_software(void) {
     int32_t acc = 0;
     for (int i = 0; i < N; i++)
@@ -74,7 +78,7 @@ int32_t dot_software(void) {
     return acc;
 }
 
-// Hardware dot product: uses dot4, four elements per instruction
+// Hardware dot product: custom dot4, four elements per iteration
 int32_t dot_hardware(void) {
     int32_t acc = 0;
     uint32_t *pa = (uint32_t *)va;
@@ -86,9 +90,9 @@ int32_t dot_hardware(void) {
 
 int main(void) {
     uart_init();
+    enable_counters();
     init_vectors();
 
-    // Warm up / ensure caches irrelevant (no cache here, but keep structure)
     volatile int32_t sw_res, hw_res;
     uint32_t c0, c1, i0, i1;
 
@@ -124,10 +128,14 @@ int main(void) {
         uart_puts("SW instrs:   "); uart_putint(sw_instrs); uart_puts("\n");
         uart_puts("HW instrs:   "); uart_putint(hw_instrs); uart_puts("\n");
 
-        // Speedup x100 for two decimal places
         if (hw_cycles > 0) {
             uart_puts("Cycle speedup x100: ");
             uart_putint((int32_t)((sw_cycles * 100) / hw_cycles));
+            uart_puts("\n");
+        }
+        if (hw_instrs > 0) {
+            uart_puts("Instr speedup x100: ");
+            uart_putint((int32_t)((sw_instrs * 100) / hw_instrs));
             uart_puts("\n");
         }
         uart_puts("\n");
