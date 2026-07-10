@@ -10,8 +10,8 @@
 #define UART_TX    (*(volatile uint32_t *)(UART_BASE + 12))
 #define CSR_EN       0x1
 #define FSTAT_TXFULL 0x100
-#define DIV_INT  81
-#define DIV_FRAC 6
+#define DIV_INT  65
+#define DIV_FRAC 4
 
 void uart_init(void) {
     UART_DIV = (DIV_INT << 4) | (DIV_FRAC & 0xf);
