@@ -1,22 +1,44 @@
 # EdgeMind dot4 Benchmark Results
 
-Measured on Hazard3 RISC-V core, Basys 3 (Artix-7), ~74.77 MHz.
-Workload: INT8 dot product over N=256 elements.
+Hazard3 RISC-V core with custom INT8 dot4 instruction, on Basys 3 (Artix-7 xc7a35t).
+
+## Build configuration (timing-clean)
+- System clock: 60.15 MHz (MMCM: 100 MHz x 10 / 16.625)
+- WNS +0.398 ns, 0 failing endpoints, TNS 0.000 ns
+- MUL_FAST = 0 (sequential multiplier for software baseline)
+- CSR_COUNTER = 1 (mcycle / minstret enabled)
+
+## Workload
+INT8 dot product over N=256 elements, mixed signed values.
+Software: one element per loop iteration, scalar mul + add.
+Hardware: four elements per iteration via custom dot4 instruction.
 
 ## Correctness
-Software and hardware both compute -1 over 256 mixed signed elements. MATCH.
+Software and hardware both return -1. MATCH.
 
 ## Results
-| Metric | Software | Custom dot4 | Ratio |
-|--------|----------|-------------|-------|
+| Metric | Software | dot4 | Ratio |
+|--------|----------|------|-------|
 | Instructions retired | 1800 | 456 | 3.94x |
-| Cycles (mcycle) | 11020 | 652 | 16.9x |
+| Cycles | 11020 | 652 | 16.90x |
 
 ## Interpretation
-- Instruction count drops ~4x: dot4 processes 4 INT8 elements per instruction
-  vs 1 per iteration in software (confirmed in disassembly).
-- Cycle count drops ~17x: on top of the 4x instruction reduction, the software
-  path uses the sequential multiplier (MUL_FAST=0, multi-cycle per mul), while
-  dot4 performs four INT8 multiply-accumulates combinationally in a single cycle.
-- The instruction-count ratio is the cleanest measure of the ISA extension's
-  benefit; the cycle ratio additionally reflects the single-cycle MAC hardware.
+- The ~3.94x instruction reduction is the direct effect of the ISA extension:
+  dot4 consumes four INT8 pairs per instruction versus one per software iteration.
+  Confirmed in the disassembly: both inner loops are 7 instructions, but the
+  dot4 loop retires one iteration per four elements.
+- The larger 16.90x cycle reduction additionally reflects that the software path
+  uses Hazard3's sequential multiplier (MUL_FAST=0), which takes multiple cycles
+  per multiply, whereas dot4 performs four INT8 multiply-accumulates combinationally
+  in a single cycle.
+- MUL_FAST=1 was evaluated as a fairer software baseline but fails timing on this
+  device: WNS -1.130 ns with 368 failing endpoints even under Flow_AlternateRoutability
+  synthesis and Performance_ExtraTimingOpt implementation. The 32x32 multiplier is
+  decomposed across 3 DSP48E1 blocks plus ~900 additional LUTs, and the partial-product
+  recombination becomes the critical path.
+
+## Timing note
+The dot4 unit itself is the critical path in the final design: register-file BRAM
+read -> four 8x8 multiplies -> 3-level adder tree -> xm_result register, 18 logic
+levels, 14.58 ns data path delay. This sets the 60.15 MHz ceiling. Pipelining the
+adder tree into a second stage is the natural next optimisation.
