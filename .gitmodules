@@ -1,0 +1,3 @@
+[submodule "hazard3"]
+	path = hazard3
+	url = https://github.com/Wren6991/Hazard3.git

@@ -7,6 +7,9 @@ import sys
 # Reset vector is at 0x40, so code must start at byte offset 0x40 in memory
 START_OFFSET = 0x40
 
+if len(sys.argv) != 3:
+    raise SystemExit(f"Usage: {sys.argv[0]} INPUT.bin OUTPUT.hex")
+
 with open(sys.argv[1], "rb") as f:
     data = f.read()
 

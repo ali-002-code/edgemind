@@ -8,7 +8,9 @@ MEMORY
 
 SECTIONS
 {
-    /* Code starts at address 0 - startup code first */
+    /* Hazard3 resets at 0x40. Keep linked addresses aligned with preload. */
+    . = ORIGIN(RAM) + 0x40;
+
     .text : {
         *(.text.init)      /* startup code goes first */
         *(.text*)          /* all other code */
@@ -27,6 +29,8 @@ SECTIONS
         *(COMMON)
         _bss_end = .;
     } > RAM
+
+    ASSERT(. <= ORIGIN(RAM) + LENGTH(RAM), "RAM overflow")
 
     /* Stack grows down from top of RAM */
     _stack_top = ORIGIN(RAM) + LENGTH(RAM);

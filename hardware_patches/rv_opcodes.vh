@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 to encode the dot4 instruction.
+
 localparam RV_RS1_LSB = 15;
 localparam RV_RS1_BITS = 5;
 localparam RV_RS2_LSB = 20;
@@ -272,5 +274,5 @@ localparam RV_RD_BITS = 5;
 // Non-RV32I instructions for Zclsd:
 `define RVOPC_NOZ_LD      32'b00000000000000000011000000000011
 `define RVOPC_NOZ_SD      32'b00000000000000000011000000100011
-`define RVOPC_H3_MATMUL   32'b0000000??????????001?????0001011 // custom-0 funct3=1 INT8 matmul
+`define RVOPC_H3_DOT4     32'b0000000??????????001?????0001011 // custom-0 funct3=1 INT8 dot product
 `endif

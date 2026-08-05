@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 to integrate the dot4 instruction.
+
 `ifdef HAZARD3_RVFI_STANDALONE
 `include "hazard3_rvfi_standalone_defs.vh"
 `endif
@@ -815,18 +817,18 @@ wire x_use_fast_mul = d_aluop == ALUOP_MULDIV && (
 );
 
 // EdgeMind custom INT8 dot-product instruction detection.
-// Decodes to ALUOP_MULDIV with M_OP_MATMUL. Combinational, single-cycle.
-wire x_use_dot4 = d_aluop == ALUOP_MULDIV && d_mulop == M_OP_MATMUL;
+// Decodes to ALUOP_MULDIV with M_OP_DOT4. Combinational, single-cycle.
+wire x_use_dot4 = |EXTENSION_M && d_aluop == ALUOP_MULDIV && d_mulop == M_OP_DOT4;
 wire [W_DATA-1:0] x_dot4_result;
-
-hazard3_dot4_int8 dot4_u (
-	.op_a   (x_rs1_bypass),
-	.op_b   (x_rs2_bypass),
-	.result (x_dot4_result)
-);
 
 generate
 if (EXTENSION_M) begin: has_muldiv
+	hazard3_dot4_int8 dot4_u (
+		.op_a   (x_rs1_bypass),
+		.op_b   (x_rs2_bypass),
+		.result (x_dot4_result)
+	);
+
 	wire              x_muldiv_op_vld;
 	wire              x_muldiv_op_rdy;
 	wire              x_muldiv_result_vld;
@@ -906,6 +908,7 @@ if (EXTENSION_M) begin: has_muldiv
 end else begin: no_muldiv
 
 	assign x_muldiv_result = {W_DATA{1'b0}};
+	assign x_dot4_result = {W_DATA{1'b0}};
 	assign m_fast_mul_result = {W_DATA{1'b0}};
 	assign m_fast_mul_result_vld = 1'b0;
 	assign x_stall_muldiv = 1'b0;

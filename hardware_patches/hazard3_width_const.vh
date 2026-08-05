@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 to widen the multiply operation ID.
+
 // These really ought to be localparams, but are occasionally needed for
 // passing flags around between modules, so are made available as parameters
 // instead. It's ugly, but better scope hygiene than the preprocessor. These
