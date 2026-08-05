@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 for Basys 3 and dot4 benchmarking.
+
 `default_nettype none
 
 module fpga (
@@ -23,7 +25,7 @@ BUFG bufg_clkfbout (
 	.O (clkfbout_buf)
 );
 
-// Configured for 100 -> 80 MHz
+// Configured for 100 MHz -> 60.150 MHz.
 MMCME2_ADV #(
 	.BANDWIDTH            ("OPTIMIZED"),
 	.CLKOUT4_CASCADE      ("FALSE"),
@@ -33,7 +35,7 @@ MMCME2_ADV #(
 	.CLKFBOUT_MULT_F      (10.000),
 	.CLKFBOUT_PHASE       (0.000),
 	.CLKFBOUT_USE_FINE_PS ("FALSE"),
-	.CLKOUT0_DIVIDE_F     (13.375),
+	.CLKOUT0_DIVIDE_F     (16.625),
 	.CLKOUT0_PHASE        (0.000),
 	.CLKOUT0_DUTY_CYCLE   (0.500),
 	.CLKOUT0_USE_FINE_PS  ("FALSE"),
@@ -88,7 +90,7 @@ blinky #(
 );
 
 blinky #(
-	.CLK_HZ (75_000_000),
+	.CLK_HZ (60_150_376),
 	.BLINK_HZ (2)
 ) blinky_clk_sys (
 	.clk (clk_sys),
@@ -110,8 +112,8 @@ example_soc #(
 
 	.SRAM_DEPTH          (1 << 15),
 
-	.CLK_MHZ             (75),
-	.PRELOAD_FILE        ("C:/Users/alieddama/edgemind/dot4_test.hex"),
+	.CLK_MHZ             (60),
+	.PRELOAD_FILE        ("dot4_bench.hex"),
 
 	.EXTENSION_A         (1),
 	.EXTENSION_C         (0),

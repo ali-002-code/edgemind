@@ -26,7 +26,7 @@ void uart_puts(const char *s) {
 }
 void uart_putint(int32_t v) {
     char buf[12]; int i = 0; uint32_t u;
-    if (v < 0) { uart_putc('-'); u = (uint32_t)(-v); } else u = (uint32_t)v;
+    if (v < 0) { uart_putc('-'); u = 0u - (uint32_t)v; } else u = (uint32_t)v;
     if (u == 0) { uart_putc('0'); return; }
     while (u) { buf[i++] = '0' + (u % 10); u /= 10; }
     while (i) uart_putc(buf[--i]);
@@ -60,8 +60,12 @@ static inline int32_t dot4(uint32_t a, uint32_t b) {
 
 #define N 256   // number of INT8 elements (multiple of 4)
 
-int8_t va[N];
-int8_t vb[N];
+_Static_assert(N % 4 == 0, "N must be a multiple of four");
+
+typedef uint32_t aliasing_uint32_t __attribute__((may_alias));
+
+int8_t va[N] __attribute__((aligned(4)));
+int8_t vb[N] __attribute__((aligned(4)));
 
 void init_vectors(void) {
     for (int i = 0; i < N; i++) {
@@ -81,8 +85,8 @@ int32_t dot_software(void) {
 // Hardware dot product: custom dot4, four elements per iteration
 int32_t dot_hardware(void) {
     int32_t acc = 0;
-    uint32_t *pa = (uint32_t *)va;
-    uint32_t *pb = (uint32_t *)vb;
+    aliasing_uint32_t *pa = (aliasing_uint32_t *)va;
+    aliasing_uint32_t *pb = (aliasing_uint32_t *)vb;
     for (int i = 0; i < N/4; i++)
         acc += dot4(pa[i], pb[i]);
     return acc;

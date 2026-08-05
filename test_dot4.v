@@ -5,6 +5,7 @@ module test_dot4;
 reg [31:0] op_a;
 reg [31:0] op_b;
 wire [31:0] result;
+integer failures = 0;
 
 hazard3_dot4_int8 dut (
     .op_a(op_a),
@@ -20,40 +21,35 @@ function [31:0] pack;
     end
 endfunction
 
+task check;
+    input [31:0] a;
+    input [31:0] b;
+    input signed [31:0] expected;
+    input [127:0] label;
+    begin
+        op_a = a;
+        op_b = b;
+        #1;
+        if ($signed(result) !== expected) begin
+            $error("%0s: got %0d, expected %0d", label, $signed(result), expected);
+            failures = failures + 1;
+        end
+    end
+endtask
+
 initial begin
-    // Test 1: [1,2,3,4] . [1,1,1,1] = 1+2+3+4 = 10
-    op_a = pack(4, 3, 2, 1);
-    op_b = pack(1, 1, 1, 1);
-    #10;
-    $display("Test 1: [1,2,3,4].[1,1,1,1] = %0d (expect 10)", $signed(result));
+    check(pack(4, 3, 2, 1), pack(1, 1, 1, 1), 10, "basic");
+    check(pack(2, 2, 2, 2), pack(3, 3, 3, 3), 24, "uniform");
+    check(pack(-1, -2, 3, 4), pack(1, 1, 1, 1), 4, "negative lanes");
+    check(pack(127, 127, 127, 127), pack(127, 127, 127, 127), 64516, "max positive");
+    check(pack(-128, -128, -128, -128), pack(-128, -128, -128, -128), 65536, "max magnitude");
+    check(pack(-5, 10, -3, 7), pack(2, -4, 6, -8), -124, "mixed signs");
 
-    // Test 2: [2,2,2,2] . [3,3,3,3] = 6*4 = 24
-    op_a = pack(2, 2, 2, 2);
-    op_b = pack(3, 3, 3, 3);
-    #10;
-    $display("Test 2: [2,2,2,2].[3,3,3,3] = %0d (expect 24)", $signed(result));
+    if (failures != 0)
+        $fatal(1, "dot4: %0d test(s) failed", failures);
 
-    // Test 3: negative values [-1,-2,3,4] . [1,1,1,1] = -1-2+3+4 = 4
-    op_a = pack(-1, -2, 3, 4);
-    op_b = pack(1, 1, 1, 1);
-    #10;
-    $display("Test 3: [-1,-2,3,4].[1,1,1,1] = %0d (expect 4)", $signed(result));
-
-    // Test 4: max values [127,127,127,127] . [127,127,127,127]
-    // = 4 * (127*127) = 4 * 16129 = 64516
-    op_a = pack(127, 127, 127, 127);
-    op_b = pack(127, 127, 127, 127);
-    #10;
-    $display("Test 4: max positive = %0d (expect 64516)", $signed(result));
-
-    // Test 5: mixed signs [-5,10,-3,7] . [2,-4,6,-8]
-    // = -10 -40 -18 -56 = -124
-    op_a = pack(-5, 10, -3, 7);
-    op_b = pack(2, -4, 6, -8);
-    #10;
-    $display("Test 5: mixed = %0d (expect -124)", $signed(result));
-
-    $finish;
+    $display("dot4: all tests passed");
+    $finish(0);
 end
 
 endmodule

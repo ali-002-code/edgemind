@@ -1,4 +1,7 @@
 /*
+ * Copyright 2026 ali-002-code
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * hazard3_dot4_int8.v
  * Custom INT8 4-way dot product unit for EdgeMind
  *
@@ -44,4 +47,3 @@ endmodule
 `ifndef YOSYS
 `default_nettype wire
 `endif
-

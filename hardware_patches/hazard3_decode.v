@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 to decode the dot4 instruction.
+
 `default_nettype none
 
 module hazard3_decode #(
@@ -436,7 +438,7 @@ always @ (*) begin
 	`RVOPC_DIVU:      if (EXTENSION_M) begin raw_aluop = ALUOP_MULDIV; raw_mulop = M_OP_DIVU;   end else begin d_invalid_32bit = 1'b1; end
 	`RVOPC_REM:       if (EXTENSION_M) begin raw_aluop = ALUOP_MULDIV; raw_mulop = M_OP_REM;    end else begin d_invalid_32bit = 1'b1; end
 	`RVOPC_REMU:      if (EXTENSION_M) begin raw_aluop = ALUOP_MULDIV; raw_mulop = M_OP_REMU;   end else begin d_invalid_32bit = 1'b1; end
-        `RVOPC_H3_MATMUL: begin raw_aluop = ALUOP_MULDIV; raw_mulop = M_OP_MATMUL; end
+	`RVOPC_H3_DOT4:    if (EXTENSION_M) begin raw_aluop = ALUOP_MULDIV; raw_mulop = M_OP_DOT4; end else begin d_invalid_32bit = 1'b1; end
 
 	`RVOPC_LR_W:      if (EXTENSION_A) begin raw_addr_is_regoffs = 1'b1; raw_memop = MEMOP_LR_W; raw_rs2 = X0;           end else begin d_invalid_32bit = 1'b1; end
 	`RVOPC_SC_W:      if (EXTENSION_A) begin raw_addr_is_regoffs = 1'b1; raw_memop = MEMOP_SC_W; raw_aluop = ALUOP_RS2;  end else begin d_invalid_32bit = 1'b1; end

@@ -6,6 +6,28 @@ EdgeMind extends the open-source Hazard3 RISC-V processor with a custom instruct
 
 Measured on real hardware, the custom instruction performs the same workload using **3.94× fewer instructions** and **16.9× fewer clock cycles** than the equivalent software implementation while meeting timing at **60.15 MHz**.
 
+## Project status
+
+This is a research and portfolio prototype, not a production CPU fork. The
+repository pins the exact Hazard3 revision used as a Git submodule and keeps
+the EdgeMind modifications in `hardware_patches/` so the changes remain easy
+to review.
+
+## Quick start
+
+```bash
+git clone --recursive https://github.com/ali-002-code/edgemind.git
+cd edgemind
+make test
+make firmware
+make apply-hardware-patches
+```
+
+`make test` runs the self-checking `dot4` RTL testbench. `make firmware`
+places the ELF, binary, disassembly, map, and block-RAM hex image in `build/`.
+Applying the hardware patches modifies only the local, pinned Hazard3
+submodule checkout.
+
 ---
 
 # Results
@@ -195,37 +217,26 @@ This illustrates one of the reasons quantised arithmetic is widely used in neura
 ## Toolchain
 
 - RISC-V GCC (`riscv64-unknown-elf-gcc`)
+- Icarus Verilog (`iverilog` and `vvp`)
 - Xilinx Vivado
 - Python 3
 
 ## Build the benchmark
 
 ```bash
-riscv64-unknown-elf-gcc \
-  -march=rv32im_zicsr \
-  -mabi=ilp32 \
-  -O2 \
-  -nostdlib \
-  -nostartfiles \
-  -T link.ld \
-  -o dot4_bench.elf \
-  start.S dot4_bench.c
-
-riscv64-unknown-elf-objcopy \
-  -O binary \
-  dot4_bench.elf \
-  dot4_bench.bin
-
-python3 bin2hex.py dot4_bench.bin dot4_bench.hex
+make firmware
 ```
 
-The generated hex image is preloaded into FPGA block RAM during synthesis.
+The generated image is `build/dot4_bench.hex`. Copy it to the repository root
+as `dot4_bench.hex` before launching the included FPGA top-level from the
+repository root. The checked-in image is retained as the reference image used
+for the published benchmark.
 
 Programming the FPGA causes the benchmark to execute automatically and print its results over UART at **115200 baud**.
 
 ## FPGA configuration
 
-`fpga_basys3.v`
+`hardware_patches/fpga_basys3.v`
 
 - System clock: **60.15 MHz**
 - `CSR_COUNTER = 1`
@@ -237,24 +248,38 @@ Programming the FPGA causes the benchmark to execute automatically and print its
 
 ```text
 hazard3/
-└── hdl/
-    ├── arith/
-    │   └── hazard3_dot4_int8.v
-    ├── hazard3_core.v
-    ├── hazard3_decode.v
-    ├── hazard3_ops.vh
-    ├── hazard3_width_const.vh
-    └── rv_opcodes.vh
+└── ...                       # pinned upstream Git submodule
+
+hardware_patches/
+├── hazard3_dot4_int8.v       # new execution unit
+├── hazard3_core.v            # modified upstream files
+├── hazard3_decode.v
+├── hazard3_ops.vh
+├── hazard3_width_const.vh
+├── rv_opcodes.vh
+└── fpga_basys3.v
 
 dot4_bench.c
 start.S
 link.ld
+bin2hex.py
+Makefile
+
+test_dot4.v                   # self-checking RTL unit test
 
 benchmarks/
+├── baseline.md
 └── dot4_results.md
 
 README.md
+LICENSE
+NOTICE
 ```
+
+The submodule is pinned to Hazard3 commit
+`0d59d3065dd39552ad59e3c314a2cf6b800cc9d0`. Run
+`git submodule update --init` if the repository was cloned without
+`--recursive`.
 
 ---
 
@@ -290,3 +315,11 @@ Future extensions could introduce wider packed operations, such as eight-element
 # Conclusion
 
 EdgeMind demonstrates how a lightweight ISA extension can substantially accelerate the core dot-product primitive used in quantised neural network inference while preserving a conventional RISC-V software development flow on FPGA hardware.
+
+---
+
+# License
+
+EdgeMind is licensed under the Apache License 2.0. The project includes and
+modifies files from [Hazard3](https://github.com/Wren6991/Hazard3), also under
+Apache-2.0. See `LICENSE` and `NOTICE` for details.

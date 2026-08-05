@@ -3,6 +3,8 @@
 |                     SPDX-License-Identifier: Apache-2.0                     |
 \*****************************************************************************/
 
+// Modified by the EdgeMind project in 2026 to define the dot4 operation.
+
 // ALU operation selectors
 
 localparam ALUOP_ADD     = 6'h00; 
@@ -122,4 +124,4 @@ localparam M_OP_DIV    = 4'h4;
 localparam M_OP_DIVU   = 4'h5;
 localparam M_OP_REM    = 4'h6;
 localparam M_OP_REMU   = 4'h7;
-localparam M_OP_MATMUL = 4'h8;
+localparam M_OP_DOT4   = 4'h8;

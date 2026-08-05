@@ -1,0 +1,10 @@
+EdgeMind
+Copyright 2026 ali-002-code
+
+This project modifies and redistributes files from Hazard3:
+https://github.com/Wren6991/Hazard3
+
+Hazard3 is Copyright (C) Luke Wren and is licensed under the Apache
+License, Version 2.0. Modified copies retain their original copyright and
+SPDX notices. EdgeMind-specific changes are described in README.md and are
+distributed under the same license.
