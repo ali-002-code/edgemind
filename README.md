@@ -2,9 +2,20 @@
 
 *A custom RISC-V ISA extension for accelerating the core dot-product primitive used in quantised neural network inference on FPGA hardware.*
 
+[![CI](https://github.com/ali-002-code/edgemind/actions/workflows/ci.yml/badge.svg)](https://github.com/ali-002-code/edgemind/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 EdgeMind extends the open-source Hazard3 RISC-V processor with a custom instruction, **`dot4`**, that computes a four-element INT8 dot product in a single instruction. The instruction is integrated directly into the processor pipeline, implemented in Verilog, and evaluated on a Digilent Basys 3 FPGA.
 
 Measured on real hardware, the custom instruction performs the same workload using **3.94× fewer instructions** and **16.9× fewer clock cycles** than the equivalent software implementation while meeting timing at **60.15 MHz**.
+
+## At a glance
+
+- **RTL:** Verilog integration into the open-source Hazard3 RISC-V pipeline
+- **Software:** bare-metal RV32IM C with a compiler-independent `.insn` wrapper
+- **Verification:** self-checking Icarus Verilog testbench and GitHub Actions
+- **Hardware:** Digilent Basys 3, Xilinx Artix-7 XC7A35T
+- **Evidence:** on-board cycle/instruction counters and timing-closed synthesis
 
 ## Project status
 
@@ -74,6 +85,17 @@ The current `dot4` unit is implemented as a single-cycle combinational datapath 
 ---
 
 # Architecture
+
+```mermaid
+flowchart LR
+    SW["C benchmark<br/>GCC .insn wrapper"] --> ENC["custom-0 instruction<br/>funct3 = 001"]
+    ENC --> DEC["Hazard3 decode"]
+    DEC --> UNPACK["Unpack two registers<br/>into 4 × INT8 lanes"]
+    UNPACK --> MUL["4 parallel<br/>8 × 8 signed multiplies"]
+    MUL --> ADD["Adder tree"]
+    ADD --> WB["32-bit writeback"]
+    WB --> OBS["mcycle / minstret<br/>and UART output"]
+```
 
 ## The instruction
 
@@ -242,6 +264,10 @@ Programming the FPGA causes the benchmark to execute automatically and print its
 - `CSR_COUNTER = 1`
 - `MUL_FAST = 0`
 
+See [`docs/fpga-reproduction.md`](docs/fpga-reproduction.md) for the exact
+automated coverage, board configuration, and the remaining Vivado
+reproducibility limitation.
+
 ---
 
 # Repository structure
@@ -258,6 +284,16 @@ hardware_patches/
 ├── hazard3_width_const.vh
 ├── rv_opcodes.vh
 └── fpga_basys3.v
+
+docs/
+└── fpga-reproduction.md
+
+examples/
+└── dot4_hardware_test/       # on-board smoke-test program and image
+
+experiments/
+├── bringup/                  # early software/UART experiments
+└── legacy_testbenches/       # retained, not part of CI
 
 dot4_bench.c
 start.S
