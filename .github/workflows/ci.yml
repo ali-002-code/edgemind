@@ -22,7 +22,7 @@ jobs:
         run: make apply-hardware-patches
 
       - name: Test dot4 RTL
-        run: make test
+        run: make test RANDOM_TESTS=10000 RANDOM_SEED=0xED6E
 
       - name: Build benchmark firmware
         run: make firmware
