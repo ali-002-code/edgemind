@@ -1,30 +1,164 @@
 # EdgeMind
 
-*A custom RISC-V ISA extension for accelerating the core dot-product primitive used in quantised neural network inference on FPGA hardware.*
+*A custom RISC-V INT8 dot-product ISA extension implemented and benchmarked on a Xilinx Artix-7 FPGA.*
 
 [![CI](https://github.com/ali-002-code/edgemind/actions/workflows/ci.yml/badge.svg)](https://github.com/ali-002-code/edgemind/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-EdgeMind extends the open-source Hazard3 RISC-V processor with a custom instruction, **`dot4`**, that computes a four-element INT8 dot product in a single instruction. The instruction is integrated directly into the processor pipeline, implemented in Verilog, and evaluated on a Digilent Basys 3 FPGA.
+EdgeMind extends the open-source Hazard3 RISC-V processor with **`dot4`**, an
+instruction that multiplies four pairs of packed signed INT8 values and sums
+the products. The instruction is implemented in Verilog, integrated into the
+processor pipeline, and evaluated on a Digilent Basys 3 FPGA.
 
-Measured on real hardware, the custom instruction performs the same workload using **3.94× fewer instructions** and **16.9× fewer clock cycles** than the equivalent software implementation while meeting timing at **60.15 MHz**.
+On a 256-element dot product, the measured hardware benchmark retires **3.94×
+fewer instructions** and takes **16.9× fewer clock cycles** than the scalar
+software implementation on the same core. The complete FPGA design meets its
+60.15 MHz timing constraint.
 
 ## At a glance
 
-- **RTL:** Verilog integration into the open-source Hazard3 RISC-V pipeline
+- **Architecture:** custom RISC-V instruction integrated into Hazard3
+- **RTL:** four parallel signed 8×8 multipliers and an accumulation datapath
 - **Software:** bare-metal RV32IM C with a compiler-independent `.insn` wrapper
-- **Verification:** self-checking Icarus Verilog testbench and GitHub Actions
+- **Verification:** directed tests plus 10,000 deterministic random vectors
 - **Hardware:** Digilent Basys 3, Xilinx Artix-7 XC7A35T
-- **Evidence:** on-board cycle/instruction counters and timing-closed synthesis
-
-## Project status
+- **Measurement:** on-chip `mcycle`/`minstret` counters and UART output
 
 This is a research and portfolio prototype, not a production CPU fork. The
-repository pins the exact Hazard3 revision used as a Git submodule and keeps
-the EdgeMind modifications in `hardware_patches/` so the changes remain easy
-to review.
+repository pins the exact Hazard3 revision used and keeps the EdgeMind changes
+in `hardware_patches/` so they remain easy to review.
 
-## Quick start
+## Architecture
+
+```mermaid
+flowchart LR
+    SW["C benchmark<br/>GCC .insn wrapper"] --> ENC["custom-0 instruction<br/>funct3 = 001"]
+    ENC --> DEC["Hazard3 decode"]
+    DEC --> UNPACK["Unpack two registers<br/>into 4 × INT8 lanes"]
+    UNPACK --> MUL["4 parallel<br/>signed 8 × 8 multiplies"]
+    MUL --> ADD["Accumulate products"]
+    ADD --> WB["32-bit writeback"]
+    WB --> OBS["mcycle / minstret<br/>and UART output"]
+```
+
+### Instruction semantics
+
+`dot4` uses the RISC-V `custom-0` opcode space (`opcode = 0001011`,
+`funct3 = 001`). Each source register contains four packed signed INT8 values:
+
+```text
+rs1 = {a3, a2, a1, a0}
+rs2 = {b3, b2, b1, b0}
+
+rd = a0*b0 + a1*b1 + a2*b2 + a3*b3
+```
+
+The implementation unpacks the lanes, computes four signed products in
+parallel, accumulates them into a 32-bit result, and routes that result through
+the processor writeback path. Integration touches the opcode definitions,
+decode logic, internal operation encoding, execute path, and result mux. The
+custom operation bypasses the sequential multiplier's stall condition.
+
+## Performance
+
+The benchmark computes a 256-element signed INT8 dot product with two
+implementations on the same processor:
+
+1. scalar C using Hazard3's sequential multiplier (`MUL_FAST = 0`); and
+2. packed C/assembly using one `dot4` instruction per four elements.
+
+| Metric | Scalar software | `dot4` | Improvement |
+|---|---:|---:|---:|
+| Instructions retired | 1,800 | 456 | **3.94× fewer** |
+| Clock cycles | 11,020 | 652 | **16.9× fewer** |
+| Cycles per instruction | ~6.1 | ~1.4 | — |
+
+Both implementations return `-1` for the published input and the on-board
+firmware reports `[MATCH]`. Counts were read on the Basys 3 using the RISC-V
+`mcycle` and `minstret` CSRs.
+
+The **3.94× instruction reduction** is the direct ISA benefit of processing
+four element pairs per instruction. The larger cycle reduction also reflects
+the sequential baseline multiplier, which stalls the pipeline for each scalar
+multiplication. It should not be interpreted as a general 16.9× speedup for
+arbitrary AI workloads.
+
+See [`benchmarks/dot4_results.md`](benchmarks/dot4_results.md) for the recorded
+configuration and benchmark interpretation.
+
+## FPGA implementation results
+
+These post-route results are for the **complete implemented Hazard3/EdgeMind
+SoC**, not the incremental hardware cost of the `dot4` instruction.
+
+- **Board:** Digilent Basys 3
+- **Device:** Xilinx Artix-7 XC7A35T
+- **Implemented clock:** 60.15 MHz
+- **Tool used for the captured results:** Vivado 2025.2
+
+### Timing
+
+| Check | Result |
+|---|---:|
+| Worst setup slack (WNS) | **+0.398 ns** |
+| Worst hold slack (WHS) | **+0.027 ns** |
+| Failing setup endpoints | **0** |
+| Failing hold endpoints | **0** |
+
+The design meets both setup and hold timing at the stated clock constraint.
+The 60.15 MHz figure is the implemented operating frequency, not a measured
+maximum frequency.
+
+### Utilisation
+
+| Resource | Used | Available | Utilisation |
+|---|---:|---:|---:|
+| LUT | 3,346 | 20,800 | 16.09% |
+| Flip-flop | 1,500 | 41,600 | 3.61% |
+| Block RAM | 33 | 50 | 66.00% |
+| I/O | 7 | 106 | 6.60% |
+| MMCM | 1 | 5 | 20.00% |
+
+The BRAM total is dominated by the example SoC memory configuration:
+`SRAM_DEPTH = 1 << 15`, or 32,768 32-bit words (**128 KiB**). The current
+summary report is not detailed enough to attribute every RAM block by
+hierarchy, so the repository does not claim that all 33 blocks belong to the
+SRAM or to `dot4`. The `dot4` execution unit itself contains no explicit
+memory. A hierarchical Vivado report is required to publish the exact split.
+
+Likewise, the table above must not be compared directly with zero to estimate
+the cost of `dot4`. An incremental resource comparison requires a stock
+Hazard3 build with the same SoC, memory, constraints, device, Vivado version,
+and implementation settings. That baseline is tracked in
+[`benchmarks/baseline.md`](benchmarks/baseline.md) and is not yet claimed.
+
+## Verification
+
+`test_dot4.v` is a self-checking RTL testbench. It covers six directed cases,
+including negative lanes, mixed signs, and maximum-magnitude values. It then
+checks **10,000 deterministic random operand pairs** against expected results
+generated by an independent Python reference model.
+
+The default random seed is `0xED6E`. Both the count and seed can be changed:
+
+```bash
+make test
+make test RANDOM_TESTS=50000 RANDOM_SEED=0x1234
+```
+
+The generated vectors stay in `build/` and are not committed. GitHub Actions
+runs the 10,000-vector regression and firmware build on every push and pull
+request.
+
+Verification has three complementary levels:
+
+- **RTL:** directed and randomized self-checking simulation;
+- **software:** reproducible bare-metal firmware build; and
+- **hardware:** bit-exact software/hardware comparison over UART.
+
+## Reproduction
+
+### Automated open-source checks
 
 ```bash
 git clone --recursive https://github.com/ali-002-code/edgemind.git
@@ -34,282 +168,39 @@ make firmware
 make apply-hardware-patches
 ```
 
-`make test` runs the self-checking `dot4` RTL testbench. `make firmware`
-places the ELF, binary, disassembly, map, and block-RAM hex image in `build/`.
-Applying the hardware patches modifies only the local, pinned Hazard3
-submodule checkout.
+`make firmware` creates the ELF, binary, disassembly, map, and BRAM hex image
+in `build/`. Applying the patches modifies only the local checkout of the
+pinned Hazard3 submodule.
 
----
+### FPGA configuration
 
-# Results
+The checked-in top-level uses:
 
-The benchmark computes a 256-element INT8 dot product on the same processor using two implementations:
+- system clock: 60.15 MHz;
+- UART: 115200 baud;
+- performance counters enabled (`CSR_COUNTER = 1`); and
+- sequential baseline multiplier (`MUL_FAST = 0`).
 
-- A standard C implementation using Hazard3's sequential multiplier
-- The custom `dot4` instruction
+The repository does not yet contain the complete Basys 3 Vivado project,
+constraints, or raw post-route reports. FPGA implementation is therefore not
+yet a one-command reproduction. This limitation and the required report
+commands are documented in
+[`docs/fpga-reproduction.md`](docs/fpga-reproduction.md).
 
-| Metric | Software | `dot4` | Improvement |
-|---------|----------|---------|-------------|
-| Instructions retired | 1800 | 456 | **3.94× fewer** |
-| Clock cycles | 11020 | 652 | **16.9× fewer** |
-| Cycles per instruction (CPI) | ~6.1 | ~1.4 | |
-
-Both implementations produce identical numerical results, confirming the correctness of the custom instruction.
-
-Performance was measured directly on the FPGA using the RISC-V **`mcycle`** and **`minstret`** performance counters.
-
-The final implementation closes timing at **60.15 MHz** with:
-
-- Worst Negative Slack (WNS): **+0.398 ns**
-- Failing endpoints: **0**
-
-## Why is the cycle improvement larger than the instruction improvement?
-
-Two independent effects combine.
-
-The **3.94× reduction in instructions** is the direct architectural benefit of the ISA extension: each `dot4` instruction performs four INT8 multiply-accumulate operations instead of one.
-
-The larger **16.9× reduction in clock cycles** comes from the implementation of the baseline multiplier. Hazard3's standard software path uses a sequential multi-cycle multiplier that stalls the processor pipeline during every multiplication. In contrast, `dot4` performs four multiplications in parallel inside dedicated hardware and completes the operation without invoking the sequential multiplier.
-
-This difference is reflected in the measured CPI:
-
-- Software: approximately **6.1 CPI**
-- `dot4`: approximately **1.4 CPI**
-
-### Real-time performance
-
-Cycle count is only part of the performance story.
-
-The current `dot4` unit is implemented as a single-cycle combinational datapath and forms the processor's critical path, limiting the design to **60.15 MHz**. A pipelined implementation could operate at a significantly higher clock frequency while introducing a small increase in instruction latency. Evaluating that trade-off is discussed in the Future Work section.
-
----
-
-# Architecture
-
-```mermaid
-flowchart LR
-    SW["C benchmark<br/>GCC .insn wrapper"] --> ENC["custom-0 instruction<br/>funct3 = 001"]
-    ENC --> DEC["Hazard3 decode"]
-    DEC --> UNPACK["Unpack two registers<br/>into 4 × INT8 lanes"]
-    UNPACK --> MUL["4 parallel<br/>8 × 8 signed multiplies"]
-    MUL --> ADD["Adder tree"]
-    ADD --> WB["32-bit writeback"]
-    WB --> OBS["mcycle / minstret<br/>and UART output"]
-```
-
-## The instruction
-
-`dot4` is implemented as a custom R-type instruction using the RISC-V **custom-0** opcode space (`opcode = 0001011`, `funct3 = 001`).
-
-Each source register contains four packed signed INT8 values.
+## Repository structure
 
 ```text
-rs1 = {a3, a2, a1, a0}
-rs2 = {b3, b2, b1, b0}
-```
-
-The instruction computes
-
-```text
-rd = a0*b0 + a1*b1 + a2*b2 + a3*b3
-```
-
-and writes the accumulated 32-bit result into `rd`.
-
-Conceptually, the instruction is similar to Arm's SDOT instruction.
-
----
-
-## Hardware implementation
-
-The execution unit (`hazard3_dot4_int8.v`) performs the following operations combinationally:
-
-1. Unpack eight signed INT8 operands.
-2. Compute four 8×8 signed multiplications in parallel.
-3. Sum the four products using an adder tree.
-4. Present the final 32-bit result to the processor's writeback stage.
-
-The combinational logic completes within a single instruction, after which the result is captured by the pipeline register on the following clock edge. No sequential multiplier stalls are introduced.
-
----
-
-## Integration into Hazard3
-
-Supporting the new instruction required modifications across the processor.
-
-### ISA definitions
-
-Files modified:
-
-- `rv_opcodes.vh`
-- `hazard3_ops.vh`
-- `hazard3_width_const.vh`
-
-A new internal multiply operation was introduced, expanding the multiply-operation field from three bits to four bits.
-
-### Decode stage
-
-`hazard3_decode.v`
-
-Responsibilities:
-
-- recognise the custom opcode
-- generate the new internal operation
-- route execution through the processor's multiply datapath
-
-### Execute and writeback
-
-`hazard3_core.v`
-
-Responsibilities:
-
-- instantiate the `dot4` execution unit
-- supply register operands
-- multiplex the result into the writeback path
-- bypass the sequential multiplier stall logic
-
----
-
-## Software
-
-The benchmark is written in standard C.
-
-The custom instruction is exposed through GCC inline assembly using the `.insn` directive, allowing ordinary C code to invoke `dot4` without modifying the compiler.
-
-Programs are:
-
-1. compiled using the RISC-V GCC toolchain
-2. linked to the processor reset vector
-3. converted into a binary image
-4. converted into a block RAM hex file
-5. preloaded into FPGA memory during synthesis
-
-After programming the FPGA, the benchmark executes automatically and prints its results over UART.
-
----
-
-# Timing verification
-
-An earlier version of the project produced correct benchmark output but failed FPGA timing analysis.
-
-The critical path passed through:
-
-- register-file read
-- four parallel multipliers
-- adder tree
-- writeback register
-
-and exceeded the target clock period by approximately **1.3 ns**.
-
-Although the benchmark appeared to execute correctly, a design that violates timing constraints cannot be considered reliable.
-
-Rather than report those measurements, the design was corrected by reducing the operating frequency until timing closure was achieved.
-
-The final implementation closes timing with:
-
-- Worst Negative Slack: **+0.398 ns**
-- Zero failing endpoints
-
-The measured instruction counts and cycle counts remain unchanged because they are independent of clock frequency. The reported results therefore come from a design that is both functionally correct and timing-correct.
-
----
-
-## Why not enable Hazard3's fast multiplier?
-
-The processor's optional single-cycle 32×32 multiplier was also evaluated.
-
-On the Basys 3 FPGA this configuration failed timing because the implementation spans three DSP blocks together with approximately 900 additional LUTs for partial-product recombination, creating an even longer critical path.
-
-The narrower INT8 datapath therefore provides both:
-
-- higher arithmetic throughput
-- a shorter critical path
-
-This illustrates one of the reasons quantised arithmetic is widely used in neural network inference hardware.
-
----
-
-# Building the project
-
-## Hardware
-
-- Digilent Basys 3
-- Xilinx Artix-7 XC7A35T FPGA
-
-## Toolchain
-
-- RISC-V GCC (`riscv64-unknown-elf-gcc`)
-- Icarus Verilog (`iverilog` and `vvp`)
-- Xilinx Vivado
-- Python 3
-
-## Build the benchmark
-
-```bash
-make firmware
-```
-
-The generated image is `build/dot4_bench.hex`. Copy it to the repository root
-as `dot4_bench.hex` before launching the included FPGA top-level from the
-repository root. The checked-in image is retained as the reference image used
-for the published benchmark.
-
-Programming the FPGA causes the benchmark to execute automatically and print its results over UART at **115200 baud**.
-
-## FPGA configuration
-
-`hardware_patches/fpga_basys3.v`
-
-- System clock: **60.15 MHz**
-- `CSR_COUNTER = 1`
-- `MUL_FAST = 0`
-
-See [`docs/fpga-reproduction.md`](docs/fpga-reproduction.md) for the exact
-automated coverage, board configuration, and the remaining Vivado
-reproducibility limitation.
-
----
-
-# Repository structure
-
-```text
-hazard3/
-└── ...                       # pinned upstream Git submodule
-
-hardware_patches/
-├── hazard3_dot4_int8.v       # new execution unit
-├── hazard3_core.v            # modified upstream files
-├── hazard3_decode.v
-├── hazard3_ops.vh
-├── hazard3_width_const.vh
-├── rv_opcodes.vh
-└── fpga_basys3.v
-
-docs/
-└── fpga-reproduction.md
-
-examples/
-└── dot4_hardware_test/       # on-board smoke-test program and image
-
-experiments/
-├── bringup/                  # early software/UART experiments
-└── legacy_testbenches/       # retained, not part of CI
-
-dot4_bench.c
-start.S
-link.ld
-bin2hex.py
-Makefile
-
-test_dot4.v                   # self-checking RTL unit test
-
-benchmarks/
-├── baseline.md
-└── dot4_results.md
-
-README.md
-LICENSE
-NOTICE
+hardware_patches/             EdgeMind RTL and modified Hazard3 integration
+hazard3/                      pinned upstream Hazard3 submodule
+scripts/                      patching and reference-vector generation
+docs/                         FPGA reproduction notes and evidence
+benchmarks/                   measured benchmark and baseline methodology
+examples/                     on-board smoke-test program
+experiments/                  historical bring-up material
+test_dot4.v                   self-checking RTL testbench
+dot4_bench.c                  on-board performance benchmark
+start.S, link.ld, bin2hex.py  bare-metal firmware support
+Makefile                      test and firmware entry points
 ```
 
 The submodule is pinned to Hazard3 commit
@@ -317,45 +208,15 @@ The submodule is pinned to Hazard3 commit
 `git submodule update --init` if the repository was cloned without
 `--recursive`.
 
----
+## Future work
 
-# Future work
+- archive post-route reports and add a reproducible Basys 3 Vivado Tcl flow;
+- measure a like-for-like stock Hazard3 implementation to isolate `dot4` cost;
+- use hierarchical utilisation to confirm the exact BRAM allocation; and
+- evaluate a pipelined `dot4` datapath as a latency-versus-frequency trade-off.
 
-## Pipeline the execution unit
-
-The current `dot4` implementation is entirely combinational and forms the processor's critical path.
-
-A natural extension would be to divide the datapath into two pipeline stages by registering the multiplication results before the final accumulation.
-
-This would increase instruction latency by one cycle while potentially allowing a significantly higher clock frequency.
-
-The trade-off should be evaluated by measuring:
-
-- execution time
-- maximum clock frequency
-- CPI
-- FPGA resource usage
-
-to determine whether the higher operating frequency outweighs the additional pipeline stage.
-
----
-
-## Wider packed operations
-
-`dot4` processes four INT8 values per instruction.
-
-Future extensions could introduce wider packed operations, such as eight-element dot products using register pairs, increasing arithmetic density while exploring the trade-off between hardware complexity and software overhead.
-
----
-
-# Conclusion
-
-EdgeMind demonstrates how a lightweight ISA extension can substantially accelerate the core dot-product primitive used in quantised neural network inference while preserving a conventional RISC-V software development flow on FPGA hardware.
-
----
-
-# License
+## License
 
 EdgeMind is licensed under the Apache License 2.0. The project includes and
 modifies files from [Hazard3](https://github.com/Wren6991/Hazard3), also under
-Apache-2.0. See `LICENSE` and `NOTICE` for details.
+Apache-2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
